@@ -1,0 +1,4 @@
+ALTER TABLE IF EXISTS public.ficheiro
+    ADD COLUMN IF NOT EXISTS public_id VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS versao int,
+    ADD COLUMN IF NOT EXISTS resource_type VARCHAR(255);
