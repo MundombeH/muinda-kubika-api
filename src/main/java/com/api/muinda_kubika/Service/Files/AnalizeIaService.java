@@ -3,12 +3,16 @@ package com.api.muinda_kubika.Service.Files;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAMetadadosResponseDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAResultadoRequestDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.SugestaoConfiancaDto;
+import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
 import com.api.muinda_kubika.Repository.Files.DocumentoAnaliseRepository;
+import com.api.muinda_kubika.Repository.Files.RepositorioRepository;
 import com.api.muinda_kubika.model.Files.DocumentoAnaliseModel;
 import com.api.muinda_kubika.model.Files.DocumentosModel;
 import com.api.muinda_kubika.model.Files.SugestaoConfiancaModel;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -18,70 +22,48 @@ import org.springframework.stereotype.Service;
 public class AnalizeIaService {
 
     private final DocumentoAnaliseRepository documentoAnaliseRepository;
+    private final RepositorioRepository repositorioRepository;
 
     public AnalizeIaService(
-        DocumentoAnaliseRepository documentoAnaliseRepository
+        DocumentoAnaliseRepository documentoAnaliseRepository,
+        RepositorioRepository repositorioRepository
     ) {
         this.documentoAnaliseRepository = documentoAnaliseRepository;
+        this.repositorioRepository = repositorioRepository;
     }
 
-    public DocumentoAnaliseModel salvarAnalise(
-        DocumentosModel documento,
-        IAResponse response
+    public boolean existeAnalisePendente(
+        UUID documentoId,
+        OrigemAnaliseIAEnum origemAnalise
     ) {
-        DocumentoAnaliseModel analise = documentoAnaliseRepository
-            .findByDocumentoId(documento.getId())
-            .orElseGet(DocumentoAnaliseModel::new);
-
-        analise.setDocumento(documento);
-        analise.setResumoGeradoIA(response.resumo());
-        analise.setTituloSugerido(response.titulo());
-        analise.setCategoriaSugerida(response.categoriaSugerida());
-        analise.setCategoriaConfianca(response.categoriaConfianca());
-        analise.setSubcategoriaSugerida(response.subcategoriaSugerida());
-        analise.setSubcategoriaConfianca(response.subcategoriaConfianca());
-        analise.setPalavrasChaveIA(
-            response.palavrasChaveIA() != null
-                ? response.palavrasChaveIA()
-                : new HashSet<>()
+        return documentoAnaliseRepository.existsByDocumentoIdAndOrigemAnaliseAndPendenteConfirmacaoTrue(
+            documentoId,
+            origemAnalise
         );
-        analise.setTagsSugeridas(
-            response.tagsSugeridas() != null
-                ? response.tagsSugeridas()
-                : new HashSet<>()
-        );
-        analise.setTecnologiasSugeridas(
-            response.tecnologiasSugeridas() != null
-                ? response.tecnologiasSugeridas()
-                : new HashSet<>()
-        );
-        analise.setFrameworksSugeridos(
-            response.frameworksSugeridos() != null
-                ? response.frameworksSugeridos()
-                : new HashSet<>()
-        );
-        analise.setConflitosDetectados(
-            response.conflitosDetectados() != null
-                ? response.conflitosDetectados()
-                : new HashSet<>()
-        );
-        analise.setDataProcessamento(LocalDateTime.now());
-        analise.setVersao(documento.getVersao());
-
-        return documentoAnaliseRepository.save(analise);
     }
 
     public DocumentoAnaliseModel salvarAnalise(
         DocumentosModel documento,
         DocumentoIAResultadoRequestDto dto
     ) {
-        DocumentoAnaliseModel analise = documentoAnaliseRepository
-            .findByDocumentoId(documento.getId())
-            .orElseGet(DocumentoAnaliseModel::new);
+        OrigemAnaliseIAEnum origemAnalise = dto.getOrigemAnalise();
+        int proximaVersao =
+            documentoAnaliseRepository
+                .findTopByDocumentoIdAndOrigemAnaliseOrderByVersaoAnaliseDescCreatedAtDesc(
+                    documento.getId(),
+                    origemAnalise
+                )
+                .map(DocumentoAnaliseModel::getVersaoAnalise)
+                .orElse(0) + 1;
 
+        DocumentoAnaliseModel analise = new DocumentoAnaliseModel();
         analise.setDocumento(documento);
+        analise.setOrigemAnalise(origemAnalise);
+        analise.setPendenteConfirmacao(true);
+        analise.setVersaoAnalise(proximaVersao);
         analise.setResumoGeradoIA(dto.getResumo());
         analise.setTituloSugerido(dto.getTitulo());
+        analise.setTituloConfianca(dto.getTituloConfianca());
         analise.setCategoriaSugerida(dto.getCategoriaSugerida());
         analise.setCategoriaConfianca(dto.getCategoriaConfianca());
         analise.setSubcategoriaSugerida(dto.getSubcategoriaSugerida());
@@ -102,18 +84,66 @@ public class AnalizeIaService {
         analise.setDataProcessamento(LocalDateTime.now());
         analise.setVersao(documento.getVersao());
 
-        return documentoAnaliseRepository.save(analise);
+        DocumentoAnaliseModel saved = documentoAnaliseRepository.save(analise);
+        sincronizarRepositorio(documento.getId(), origemAnalise, dto);
+        return saved;
     }
 
-    public DocumentoIAMetadadosResponseDto buscarMetadadosPorDocumentoId(
+    public List<DocumentoIAMetadadosResponseDto> buscarMetadadosPorDocumentoId(
         UUID documentoId
     ) {
-        DocumentoAnaliseModel analise = documentoAnaliseRepository
-            .findByDocumentoId(documentoId)
-            .orElseThrow(() ->
-                new RuntimeException("Metadados da IA não encontrados")
-            );
+        return documentoAnaliseRepository
+            .findByDocumentoIdOrderByCreatedAtDesc(documentoId)
+            .stream()
+            .map(this::mapToMetadadosDto)
+            .collect(Collectors.toList());
+    }
 
+    public Optional<
+        DocumentoIAMetadadosResponseDto
+    > buscarUltimoMetadadoPorOrigem(
+        UUID documentoId,
+        OrigemAnaliseIAEnum origemAnalise
+    ) {
+        return documentoAnaliseRepository
+            .findTopByDocumentoIdAndOrigemAnaliseOrderByVersaoAnaliseDescCreatedAtDesc(
+                documentoId,
+                origemAnalise
+            )
+            .map(this::mapToMetadadosDto);
+    }
+
+    private void sincronizarRepositorio(
+        UUID documentoId,
+        OrigemAnaliseIAEnum origemAnalise,
+        DocumentoIAResultadoRequestDto dto
+    ) {
+        if (origemAnalise != OrigemAnaliseIAEnum.REPOSITORIO) {
+            return;
+        }
+
+        repositorioRepository
+            .findByDocumentoId(documentoId)
+            .ifPresent(repositorio -> {
+                repositorio.setTecnologiasUsadas(
+                    dto.getTecnologiasSugeridas() != null
+                        ? dto
+                              .getTecnologiasSugeridas()
+                              .stream()
+                              .map(SugestaoConfiancaDto::getValor)
+                              .filter(
+                                  valor -> valor != null && !valor.isBlank()
+                              )
+                              .collect(Collectors.toSet())
+                        : new HashSet<>()
+                );
+                repositorioRepository.save(repositorio);
+            });
+    }
+
+    private DocumentoIAMetadadosResponseDto mapToMetadadosDto(
+        DocumentoAnaliseModel analise
+    ) {
         DocumentoIAMetadadosResponseDto dto =
             new DocumentoIAMetadadosResponseDto();
         dto.setId(analise.getId());
@@ -125,6 +155,9 @@ public class AnalizeIaService {
                 ? analise.getDocumento().getId()
                 : null
         );
+        dto.setOrigemAnalise(analise.getOrigemAnalise());
+        dto.setPendenteConfirmacao(analise.getPendenteConfirmacao());
+        dto.setVersaoAnalise(analise.getVersaoAnalise());
         dto.setResumoGeradoIA(analise.getResumoGeradoIA());
         dto.setTituloSugerido(analise.getTituloSugerido());
         dto.setTituloConfianca(analise.getTituloConfianca());

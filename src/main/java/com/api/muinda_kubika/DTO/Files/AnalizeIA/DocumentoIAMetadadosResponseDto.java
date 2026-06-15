@@ -1,6 +1,7 @@
 package com.api.muinda_kubika.DTO.Files.AnalizeIA;
 
 import com.api.muinda_kubika.Defaults.DefaultDto;
+import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,6 +14,12 @@ import lombok.Setter;
 public class DocumentoIAMetadadosResponseDto extends DefaultDto {
 
     private UUID documentoId;
+
+    private OrigemAnaliseIAEnum origemAnalise;
+
+    private Boolean pendenteConfirmacao;
+
+    private Integer versaoAnalise;
 
     private String resumoGeradoIA;
 

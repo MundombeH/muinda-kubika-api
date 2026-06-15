@@ -1,5 +1,6 @@
 package com.api.muinda_kubika.DTO.Files.AnalizeIA;
 
+import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
 import jakarta.validation.constraints.NotNull;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,7 +15,12 @@ public class DocumentoIAResultadoRequestDto {
     @NotNull(message = "O Documento é obrigatorio")
     private UUID documentoId;
 
+    @NotNull(message = "A origem da análise é obrigatória")
+    private OrigemAnaliseIAEnum origemAnalise;
+
     private String titulo;
+
+    private Integer tituloConfianca;
 
     private String resumo;
 

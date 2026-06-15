@@ -9,5 +9,6 @@ public record DocumentoIAMessage(
     String fileName,
     String mimeType,
     Long tamanhoBytes,
-    String formato
+    String formato,
+    String origemAnalise
 ) {}

@@ -2,7 +2,6 @@ package com.api.muinda_kubika.DTO.Files.AnalizeIA;
 
 import com.api.muinda_kubika.model.Files.DocumentosModel;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;

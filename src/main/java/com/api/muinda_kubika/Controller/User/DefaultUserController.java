@@ -31,16 +31,19 @@ public class DefaultUserController {
         this.userService = userService;
     }
 
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    // @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("")
     public ResponseEntity<List<DefaultUserResponseDto>> getAll() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    // @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<DefaultUserResponseDto> getAll(Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
+        System.out.println("Id:"+userId);
         return ResponseEntity.ok(userService.getOneUser(userId));
     }
 
@@ -63,7 +66,9 @@ public class DefaultUserController {
         return ResponseEntity.ok(userService.updateUser(userId, dto));
     }
 
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    // @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/senha")
     public ResponseEntity<String> updatePassword(
         @Valid @RequestBody UserUpdatePasswordDto dto,
@@ -74,9 +79,11 @@ public class DefaultUserController {
         return ResponseEntity.ok(userService.updatePassword(userId, dto));
     }
 
-    @PreAuthorize(
-        "@roleChecker.hasActiveRole(authentication, 'ROLE_ADMIN') and @roleChecker.hasAuthority(authentication, 'USUARIO_GERIR')"
-    )
+    // @PreAuthorize(
+    //     "@roleChecker.hasActiveRole(authentication, 'ROLE_ADMIN') and @roleChecker.hasAuthority(authentication, 'USUARIO_GERIR')"
+        
+    // )
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userService.deleteUser(id);

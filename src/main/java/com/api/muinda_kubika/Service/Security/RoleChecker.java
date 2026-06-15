@@ -21,11 +21,21 @@ public class RoleChecker {
 
     public boolean hasActiveRole(Authentication authentication, String roleName) {
         if (!isAuthenticated(authentication) || roleName == null || roleName.isBlank()) {
+            System.out.println("❌ RoleChecker: Usuário não está autenticado.");
             return false;
         }
-
-        return hasAuthorityInToken(authentication, roleName)
-                && rolesRepository.existsByDescricaoAndIsActiveTrue(roleName);
+    
+        // Printa o que veio de dentro do seu Token para você ver
+        System.out.println("👉 Authorities vindas do Token: " + authentication.getAuthorities());
+        System.out.println("👉 Role que a rota está pedindo: " + roleName);
+    
+        boolean temNoToken = hasAuthorityInToken(authentication, roleName);
+        boolean ativaNoBanco = rolesRepository.existsByDescricaoAndIsActiveTrue(roleName);
+    
+        System.out.println("✅ Tem a role no Token? " + temNoToken);
+        System.out.println("✅ A role está ativa no Banco? " + ativaNoBanco);
+    
+        return temNoToken && ativaNoBanco;
     }
 
     public boolean hasAnyActiveRole(Authentication authentication, String... roleNames) {

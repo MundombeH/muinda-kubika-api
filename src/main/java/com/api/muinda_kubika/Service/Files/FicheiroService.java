@@ -3,15 +3,19 @@ package com.api.muinda_kubika.Service.Files;
 import com.api.muinda_kubika.Config.RabbitConfig;
 import com.api.muinda_kubika.DTO.Cloudinary.CloudinaryUploadResponse;
 import com.api.muinda_kubika.DTO.Files.Documentos.DocumentoResumoDto;
-import com.api.muinda_kubika.DTO.Files.Ficheiros.FicheirosRequestDto;
 import com.api.muinda_kubika.DTO.Files.Ficheiros.FicheirosResponseDto;
 import com.api.muinda_kubika.DTO.Messages.DocumentoIAMessage;
+import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
+import com.api.muinda_kubika.Exceptions.DocumentoAnalisePendenteException;
 import com.api.muinda_kubika.Repository.Files.DocumentoRepository;
 import com.api.muinda_kubika.Repository.Files.FichieroRepository;
+import com.api.muinda_kubika.Repository.Files.RepositorioRepository;
 import com.api.muinda_kubika.Service.Cloudinary.CloudinaryService;
 import com.api.muinda_kubika.model.Files.DocumentosModel;
 import com.api.muinda_kubika.model.Files.FicheiroModel;
+import com.api.muinda_kubika.model.Files.RepositorioModel;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,17 +28,23 @@ public class FicheiroService {
 
     private final FichieroRepository fichieroRepository;
     private final DocumentoRepository documentoRepository;
+    private final RepositorioRepository repositorioRepository;
+    private final AnalizeIaService analizeIaService;
     private final CloudinaryService cloudinaryService;
     private final RabbitTemplate rabbitTemplate;
 
     public FicheiroService(
         FichieroRepository fichieroRepository,
         DocumentoRepository documentoRepository,
+        RepositorioRepository repositorioRepository,
+        AnalizeIaService analizeIaService,
         CloudinaryService cloudinaryService,
         RabbitTemplate rabbitTemplate
     ) {
         this.fichieroRepository = fichieroRepository;
         this.documentoRepository = documentoRepository;
+        this.repositorioRepository = repositorioRepository;
+        this.analizeIaService = analizeIaService;
         this.cloudinaryService = cloudinaryService;
         this.rabbitTemplate = rabbitTemplate;
     }
@@ -64,6 +74,8 @@ public class FicheiroService {
                 new RuntimeException("Documento não encontrado")
             );
 
+        validarAnalisePendente(documentoId, OrigemAnaliseIAEnum.FICHEIRO);
+
         System.out.println(
             "Tipo de documento:" + documento.getTipoDeDocumento()
         );
@@ -84,7 +96,8 @@ public class FicheiroService {
                 file.getOriginalFilename(),
                 file.getContentType(),
                 upload.bytes(),
-                upload.format()
+                upload.format(),
+                OrigemAnaliseIAEnum.FICHEIRO.name()
             )
         );
 
@@ -106,6 +119,65 @@ public class FicheiroService {
         fichieroRepository.save(ficheiro);
 
         return mapToFicheiros(ficheiro);
+    }
+
+    public boolean documentoTemArquivoZip(UUID documentoId) {
+        return fichieroRepository.existsByDocumentoIdAndIsActiveTrueAndFormatoIgnoreCase(
+            documentoId,
+            "zip"
+        );
+    }
+
+    public void submeterRepositorioGithub(String gitUrl, UUID documentoId) {
+        DocumentosModel documento = documentoRepository
+            .findByIdAndIsActiveTrue(documentoId)
+            .orElseThrow(() ->
+                new RuntimeException("Documento não encontrado")
+            );
+
+        validarAnalisePendente(documentoId, OrigemAnaliseIAEnum.REPOSITORIO);
+
+        String normalizedUrl = gitUrl != null ? gitUrl.trim() : "";
+        if (!isGithubUrl(normalizedUrl)) {
+            throw new IllegalArgumentException(
+                "A URL informada deve ser de um repositório público do GitHub"
+            );
+        }
+
+        RepositorioModel repositorio = repositorioRepository
+            .findByDocumentoId(documentoId)
+            .orElseGet(RepositorioModel::new);
+        repositorio.setDocumento(documento);
+        repositorio.setUrlGithub(normalizedUrl);
+        repositorioRepository.save(repositorio);
+
+        rabbitTemplate.convertAndSend(
+            RabbitConfig.EXCHANGE,
+            RabbitConfig.ROUTING_KEY,
+            new DocumentoIAMessage(
+                documento.getId(),
+                normalizedUrl,
+                documento.getTipoDeDocumento().name(),
+                extractRepoName(normalizedUrl),
+                "text/plain",
+                0L,
+                "git",
+                OrigemAnaliseIAEnum.REPOSITORIO.name()
+            )
+        );
+    }
+
+    private void validarAnalisePendente(
+        UUID documentoId,
+        OrigemAnaliseIAEnum origemAnalise
+    ) {
+        if (
+            analizeIaService.existeAnalisePendente(documentoId, origemAnalise)
+        ) {
+            throw new DocumentoAnalisePendenteException(
+                "Já existe uma análise pendente para esta origem neste documento"
+            );
+        }
     }
 
     private FicheirosResponseDto mapToFicheiros(FicheiroModel ficheiros) {
@@ -136,8 +208,40 @@ public class FicheiroService {
         dto.setVersao(documentosModel.getVersao());
         dto.setTitulo(documentosModel.getTitulo());
         dto.setTipoDocumento(documentosModel.getTipoDeDocumento());
+        dto.setStatus(documentosModel.getStatus());
 
         return dto;
+    }
+
+    private boolean isGithubUrl(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = uri.getHost();
+            String path = uri.getPath();
+            return (
+                host != null &&
+                host.equalsIgnoreCase("github.com") &&
+                path != null &&
+                path.matches("^/[^/]+/[^/]+/?$")
+            );
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String extractRepoName(String url) {
+        try {
+            String path = URI.create(url).getPath();
+            if (path == null || path.isBlank()) {
+                return "repositorio-github";
+            }
+            String[] parts = path.replaceAll("/$", "").split("/");
+            return parts.length > 0
+                ? parts[parts.length - 1]
+                : "repositorio-github";
+        } catch (Exception e) {
+            return "repositorio-github";
+        }
     }
 
     private String generateChecksum(MultipartFile file) {

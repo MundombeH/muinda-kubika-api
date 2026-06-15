@@ -2,7 +2,7 @@ package com.api.muinda_kubika.Enums;
 
 public enum TipoDocumentoEnum {
     MONOGRAFIA("Monografia"),
-    RELATÓRIO("Relatório"),
+    RELATORIO("Relatório"),
     ARTIGO("Artigo"),
     REPOSITORIO("Repósitorio"),
     ZIP("ZIP"),

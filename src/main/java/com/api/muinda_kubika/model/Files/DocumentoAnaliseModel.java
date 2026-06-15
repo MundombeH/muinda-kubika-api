@@ -1,6 +1,7 @@
 package com.api.muinda_kubika.model.Files;
 
 import com.api.muinda_kubika.Defaults.DefaultModel;
+import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -17,6 +18,16 @@ public class DocumentoAnaliseModel extends DefaultModel {
     @ManyToOne
     @JoinColumn(name = "documento_id")
     private DocumentosModel documento;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origem_analise", nullable = false)
+    private OrigemAnaliseIAEnum origemAnalise;
+
+    @Column(name = "pendente_confirmacao", nullable = false)
+    private Boolean pendenteConfirmacao = true;
+
+    @Column(name = "versao_analise", nullable = false)
+    private Integer versaoAnalise;
 
     @Column(name = "resumo_gerado_ia")
     private String resumoGeradoIA;
