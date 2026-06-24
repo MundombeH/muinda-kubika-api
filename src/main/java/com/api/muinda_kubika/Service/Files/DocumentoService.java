@@ -13,6 +13,7 @@ import com.api.muinda_kubika.Exceptions.UserNotFoundException;
 import com.api.muinda_kubika.Repository.Categorias_Tags.CategoriasRepository;
 import com.api.muinda_kubika.Repository.Categorias_Tags.TagsRepository;
 import com.api.muinda_kubika.Repository.Files.DocumentoRepository;
+import com.api.muinda_kubika.Repository.Files.RepositorioRepository;
 import com.api.muinda_kubika.Repository.Instituicoes.InstituicoesRepository;
 import com.api.muinda_kubika.Repository.Usuarios.DefaultUserRepository;
 import com.api.muinda_kubika.model.Categorias_Tags.CategoriasModel;
@@ -37,19 +38,22 @@ public class DocumentoService {
     private final InstituicoesRepository instituicoesRepository;
     private final CategoriasRepository categoriasRepository;
     private final TagsRepository tagsRepository;
+    private final RepositorioRepository repositorioRepository;
 
     public DocumentoService(
         DocumentoRepository documentoRepository,
         DefaultUserRepository userRepository,
         InstituicoesRepository instituicoesRepository,
         CategoriasRepository categoriasRepository,
-        TagsRepository tagsRepository
+        TagsRepository tagsRepository,
+        RepositorioRepository repositorioRepository
     ) {
         this.documentoRepository = documentoRepository;
         this.userRepository = userRepository;
         this.instituicoesRepository = instituicoesRepository;
         this.categoriasRepository = categoriasRepository;
         this.tagsRepository = tagsRepository;
+        this.repositorioRepository = repositorioRepository;
     }
 
     public List<DocumentosResponseDto> getAllDocumentos() {
@@ -264,6 +268,13 @@ public class DocumentoService {
         if (documentosModel.getAprovadoPor() != null) {
             dto.setAprovadoPor(mapToUsuario(documentosModel.getAprovadoPor()));
         }
+
+        repositorioRepository
+            .findByDocumentoId(documentosModel.getId())
+            .ifPresent(repositorio -> {
+                dto.setUrlGithub(repositorio.getUrlGithub());
+                dto.setTecnologiasUsadas(repositorio.getTecnologiasUsadas());
+            });
 
         return dto;
     }

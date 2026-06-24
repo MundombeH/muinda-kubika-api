@@ -82,7 +82,7 @@ public class DocumentoIAController {
         @PathVariable UUID documentoId,
         @RequestBody @Valid DocumentoIAGitUrlRequestDto dto
     ) {
-        ficheiroService.submeterRepositorioGithub(dto.getGitUrl(), documentoId);
+        ficheiroService.submeterRepositorioGithub(dto.getGitUrl(), dto.getTecnologiasUsadas(), documentoId);
         return ResponseEntity.ok("Repositório enviado para análise");
     }
 

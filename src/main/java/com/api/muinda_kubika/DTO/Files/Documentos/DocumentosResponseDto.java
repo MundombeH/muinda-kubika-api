@@ -44,4 +44,7 @@ public class DocumentosResponseDto extends DefaultDto {
     private Set<TagsResponseDto> tags = new HashSet<>();
 
     private Set<FicheiroResumoDto> ficheiros = new HashSet<>();
+
+    private String urlGithub;
+    private Set<String> tecnologiasUsadas;
 }

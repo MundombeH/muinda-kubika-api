@@ -17,6 +17,7 @@ import com.api.muinda_kubika.model.Files.RepositorioModel;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -128,7 +129,7 @@ public class FicheiroService {
         );
     }
 
-    public void submeterRepositorioGithub(String gitUrl, UUID documentoId) {
+    public void submeterRepositorioGithub(String gitUrl, Set<String> tecnologiasUsadas, UUID documentoId) {
         DocumentosModel documento = documentoRepository
             .findByIdAndIsActiveTrue(documentoId)
             .orElseThrow(() ->
@@ -149,6 +150,9 @@ public class FicheiroService {
             .orElseGet(RepositorioModel::new);
         repositorio.setDocumento(documento);
         repositorio.setUrlGithub(normalizedUrl);
+        if (tecnologiasUsadas != null) {
+            repositorio.setTecnologiasUsadas(tecnologiasUsadas);
+        }
         repositorioRepository.save(repositorio);
 
         rabbitTemplate.convertAndSend(
