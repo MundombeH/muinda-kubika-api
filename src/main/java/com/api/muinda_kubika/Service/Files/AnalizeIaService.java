@@ -76,11 +76,35 @@ public class AnalizeIaService {
         analise.setFrameworksSugeridos(
             mapSugestoes(dto.getFrameworksSugeridos())
         );
-        analise.setConflitosDetectados(
+        Set<String> conflitos = new HashSet<>(
             dto.getConflitosDetectados() != null
                 ? dto.getConflitosDetectados()
                 : new HashSet<>()
         );
+
+        String tituloUser = documento.getTitulo();
+        String tituloIa = dto.getTitulo();
+        if (
+            tituloUser != null && !tituloUser.isBlank() &&
+            tituloIa != null && !tituloIa.isBlank() &&
+            !tituloUser.equalsIgnoreCase(tituloIa.strip())
+        ) {
+            conflitos.add(
+                "O título fornecido (" + tituloUser + ") difere do título sugerido pela IA (" + tituloIa.strip() + ")"
+            );
+        }
+
+        String resumoUser = documento.getResumo();
+        String resumoIa = dto.getResumo();
+        if (
+            resumoUser != null && !resumoUser.isBlank() &&
+            resumoIa != null && !resumoIa.isBlank() &&
+            !resumoUser.equalsIgnoreCase(resumoIa.strip())
+        ) {
+            conflitos.add("O resumo fornecido difere do resumo gerado pela IA");
+        }
+
+        analise.setConflitosDetectados(conflitos);
         analise.setDataProcessamento(LocalDateTime.now());
         analise.setVersao(documento.getVersao());
 
@@ -100,9 +124,7 @@ public class AnalizeIaService {
     }
 
     public Optional<
-        DocumentoIAMetadadosResponseDto
-    > buscarUltimoMetadadoPorOrigem(
-        UUID documentoId,
+        DocumentoIAMetadadosResponseDto> buscarUltimoMetadadoPorOrigem( UUID documentoId,
         OrigemAnaliseIAEnum origemAnalise
     ) {
         return documentoAnaliseRepository
@@ -113,9 +135,7 @@ public class AnalizeIaService {
             .map(this::mapToMetadadosDto);
     }
 
-    private void sincronizarRepositorio(
-        UUID documentoId,
-        OrigemAnaliseIAEnum origemAnalise,
+    private void sincronizarRepositorio( UUID documentoId, OrigemAnaliseIAEnum origemAnalise,
         DocumentoIAResultadoRequestDto dto
     ) {
         if (origemAnalise != OrigemAnaliseIAEnum.REPOSITORIO) {
@@ -170,9 +190,7 @@ public class AnalizeIaService {
         dto.setTecnologiasSugeridas(
             mapSugestoesModel(analise.getTecnologiasSugeridas())
         );
-        dto.setFrameworksSugeridos(
-            mapSugestoesModel(analise.getFrameworksSugeridos())
-        );
+        dto.setFrameworksSugeridos(mapSugestoesModel(analise.getFrameworksSugeridos()));
         dto.setConflitosDetectados(analise.getConflitosDetectados());
         dto.setMotivoRejeicao(analise.getMotivoRejeicao());
         dto.setObservacaoAdmin(analise.getObservacaoAdmin());

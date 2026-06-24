@@ -2,6 +2,7 @@ package com.api.muinda_kubika.Service.Usuarios;
 
 import com.api.muinda_kubika.DTO.Instituicoes.InstituicoesResumoDto;
 import com.api.muinda_kubika.DTO.Usuarios.DefaultUser.DefaultUserResumoDto;
+import com.api.muinda_kubika.DTO.Usuarios.Docente.DocenteCriarDto;
 import com.api.muinda_kubika.DTO.Usuarios.Docente.DocenteResponseDto;
 import com.api.muinda_kubika.DTO.Usuarios.Docente.DocenteRequestDto;
 import com.api.muinda_kubika.Enums.ProfileTypeEnum;
@@ -61,25 +62,38 @@ public class DocenteService {
     }
 
     public DocenteResponseDto getOne(UUID userId) {
-        DocenteModel docente =docenteRepository.findByUsuarioAndIsActiveTrue(userId)
+        DocenteModel docente =docenteRepository.findByUsuarioIdAndIsActiveTrue(userId)
                         .orElseThrow(() -> new UserNotFoundException(userId));
 
         return mapToDto(docente);
     }
 
     @Transactional
-    public String criarPerfilDocente(UUID userId) {
+    public String criarPerfilDocente(UUID userId, DocenteCriarDto dto) {
 
         DefaultUserModel user = userRepository.findByIdAndIsActiveTrue(userId)
                         .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (docenteRepository.existsByUsuario(userId)) {
+        if (docenteRepository.existsByUsuarioId(userId)) {
             throw new ProfileAlreadyExistsException(userId);
         }
 
         DocenteModel docente = new DocenteModel();
         docente.setUsuario(user);
+        docente.setIdentificacao(dto.getIdentificacao());
+        docente.setDepartamento(dto.getDepartamento());
+        docente.setGenero(dto.getGenero());
         docente.setIsActive(false);
+
+        if (dto.getInstituicoes() != null && !dto.getInstituicoes().isEmpty()) {
+            Set<InstituicaoModel> instituicoes = dto.getInstituicoes()
+                .stream()
+                .map(id -> instituicoesRepository
+                    .findByIdAndIsActiveTrue(id)
+                    .orElseThrow(() -> new RuntimeException("Instituição não encontrada: " + id)))
+                .collect(Collectors.toSet());
+            docente.setInstituicao(instituicoes);
+        }
 
         DocenteModel saved = docenteRepository.save(docente);
         profileApprovalService.createPendingApproval(ProfileTypeEnum.DOCENTE, saved.getId(), userId);
@@ -95,7 +109,7 @@ public class DocenteService {
     @Transactional
     public DocenteResponseDto updateDocente(DocenteRequestDto dto, UUID userId) {
 
-        DocenteModel docente = docenteRepository.findByUsuarioAndIsActiveTrue(userId)
+        DocenteModel docente = docenteRepository.findByUsuarioIdAndIsActiveTrue(userId)
                         .orElseThrow(() -> new UserNotFoundException(userId));
 
         BairroModel bairro = bairrosRepository.findByIdAndIsActiveTrue(dto.getBairro())
@@ -125,7 +139,7 @@ public class DocenteService {
     @Transactional
     public void deleteDocente(UUID userId) {
 
-        DocenteModel docente =docenteRepository.findByUsuarioAndIsActiveTrue(userId)
+        DocenteModel docente =docenteRepository.findByUsuarioIdAndIsActiveTrue(userId)
                         .orElseThrow(() -> new UserNotFoundException(userId));
 
         RolesModel role = rolesRepository.findByDescricao("ROLE_DOCENTE")

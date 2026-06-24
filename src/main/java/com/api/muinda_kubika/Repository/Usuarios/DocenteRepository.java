@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface DocenteRepository extends JpaRepository<DocenteModel, UUID> {
     Optional<DocenteModel> findByIdAndIsActiveTrue(UUID uuid);
     List<DocenteModel> findByIsActiveTrue();
-    Optional<DocenteModel> findByUsuarioAndIsActiveTrue(UUID userId);
+    Optional<DocenteModel> findByUsuarioIdAndIsActiveTrue(UUID userId);
 
-    boolean existsByUsuario(UUID userId);
+    boolean existsByUsuarioId(UUID userId);
 }

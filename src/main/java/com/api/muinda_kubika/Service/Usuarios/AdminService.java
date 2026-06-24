@@ -40,7 +40,7 @@ public class AdminService {
     }
 
     public AdminResponseDto getOneAdmin(UUID userId) {
-        AdminModel admin = adminRepository.findByUsuarioAndIsActiveTrue(userId)
+        AdminModel admin = adminRepository.findByUsuarioIdAndIsActiveTrue(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         return mapToDto(admin);
@@ -71,7 +71,7 @@ public class AdminService {
 
     @Transactional
     public void deleteAdmin(UUID userId) {
-        AdminModel admin = adminRepository.findByUsuarioAndIsActiveTrue(userId)
+        AdminModel admin = adminRepository.findByUsuarioIdAndIsActiveTrue(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         RolesModel roleAdmin = rolesRepository

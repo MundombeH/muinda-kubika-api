@@ -1,15 +1,17 @@
 package com.api.muinda_kubika.Controller.Files;
 
+import com.api.muinda_kubika.DTO.Files.Documentos.DocumentoStatusUpdateDto;
+import com.api.muinda_kubika.DTO.Files.Documentos.DocumentoUpdateRequestDto;
 import com.api.muinda_kubika.DTO.Files.Documentos.DocumentosRequestDto;
 import com.api.muinda_kubika.DTO.Files.Documentos.DocumentosResponseDto;
 import com.api.muinda_kubika.Service.Files.DocumentoService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("documento")
@@ -26,15 +28,50 @@ public class DocumentoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DocumentosResponseDto> getOne(UUID id) {
-
+    public ResponseEntity<DocumentosResponseDto> getOne(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(documentoService.getOneDocumento(id));
     }
 
     @PostMapping("")
-    public ResponseEntity<DocumentosResponseDto> post(@RequestBody  @Valid DocumentosRequestDto dto) {
-        UUID idTeste = UUID.fromString("9d80ba6c-ecd9-44f5-aac6-c86415ecd982");
-        return ResponseEntity.status(HttpStatus.CREATED).body(documentoService.createDocumento(dto,idTeste));
+    public ResponseEntity<DocumentosResponseDto> post(
+        @RequestBody @Valid DocumentosRequestDto dto,
+        Authentication auth
+    ) {
+        UUID userId = UUID.fromString(auth.getName());
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(documentoService.createDocumento(dto, userId));
+    }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<DocumentosResponseDto> update(
+        @PathVariable UUID id,
+        @RequestBody @Valid DocumentoUpdateRequestDto dto
+    ) {
+        return ResponseEntity.ok(documentoService.updateDocumento(id, dto));
+    }
+
+    @PatchMapping("/{id}/aprovar")
+    public ResponseEntity<DocumentosResponseDto> approve(
+        @PathVariable UUID id,
+        Authentication auth
+    ) {
+        UUID adminId = UUID.fromString(auth.getName());
+        return ResponseEntity.ok(documentoService.approveDocumento(id, adminId));
+    }
+
+    @PatchMapping("/{id}/rejeitar")
+    public ResponseEntity<DocumentosResponseDto> reject(
+        @PathVariable UUID id,
+        @RequestBody(required = false) DocumentoStatusUpdateDto dto,
+        Authentication auth
+    ) {
+        UUID adminId = UUID.fromString(auth.getName());
+        String motivo = dto != null ? dto.getMotivoRejeicao() : null;
+        return ResponseEntity.ok(documentoService.rejectDocumento(id, adminId, motivo));
+    }
+
+    @PatchMapping("/{id}/publicar")
+    public ResponseEntity<DocumentosResponseDto> publish(@PathVariable UUID id) {
+        return ResponseEntity.ok(documentoService.publishDocumento(id));
     }
 }

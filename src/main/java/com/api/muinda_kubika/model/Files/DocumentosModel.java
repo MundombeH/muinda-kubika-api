@@ -58,6 +58,9 @@ public class DocumentosModel extends DefaultModel {
     @Column(name = "versao")
     private Integer versao;
 
+    @Column(name = "capa_url")
+    private String capaUrl;
+
     @OneToMany(mappedBy = "documento", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FicheiroModel> ficheiros = new HashSet<>();
 

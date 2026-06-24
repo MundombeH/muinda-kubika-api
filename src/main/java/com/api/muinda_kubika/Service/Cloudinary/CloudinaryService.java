@@ -52,6 +52,20 @@ public class CloudinaryService {
         );
     }
 
+    public String uploadCoverImage(MultipartFile file) throws IOException {
+        Map<String, Object> params = ObjectUtils.asMap(
+                "resource_type", "image",
+                "folder", "capas"
+        );
+
+        Map<?, ?> result = cloudinary.uploader().upload(
+                file.getBytes(),
+                params
+        );
+
+        return (String) result.get("secure_url");
+    }
+
     public void deleteFile(String publicId) throws IOException {
 
         cloudinary.uploader().destroy(

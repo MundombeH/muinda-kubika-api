@@ -14,7 +14,7 @@ public interface EstudanteRepository extends JpaRepository<EstudanteModel, UUID>
     Optional<EstudanteModel> findByIdAndIsActiveTrue(UUID uuid);
 
     List<EstudanteModel> findByIsActiveTrue();
-    Optional<EstudanteModel> findByUsuarioAndIsActiveTrue(UUID userId);
+    Optional<EstudanteModel> findByUsuarioIdAndIsActiveTrue(UUID userId);
 
-    boolean existsByUsuario(UUID userId);
+    boolean existsByUsuarioId(UUID userId);
 }

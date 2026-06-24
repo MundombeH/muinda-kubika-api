@@ -1,5 +1,6 @@
 package com.api.muinda_kubika.Controller.User;
 
+import com.api.muinda_kubika.DTO.Usuarios.Docente.DocenteCriarDto;
 import com.api.muinda_kubika.DTO.Usuarios.Docente.DocenteRequestDto;
 import com.api.muinda_kubika.DTO.Usuarios.Docente.DocenteResponseDto;
 import com.api.muinda_kubika.Service.Usuarios.DocenteService;
@@ -41,13 +42,15 @@ public class DocenteController {
         return ResponseEntity.ok(docenteService.getOne(userId));
     }
 
-    // CRIAR PERFIL DOCENTE
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<String> create(Authentication auth) {
+    public ResponseEntity<String> create(
+        Authentication auth,
+        @Valid @RequestBody DocenteCriarDto dto
+    ) {
         UUID userId = UUID.fromString(auth.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            docenteService.criarPerfilDocente(userId)
+            docenteService.criarPerfilDocente(userId, dto)
         );
     }
 

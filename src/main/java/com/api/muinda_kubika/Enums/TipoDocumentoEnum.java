@@ -7,7 +7,8 @@ public enum TipoDocumentoEnum {
     REPOSITORIO("Repósitorio"),
     ZIP("ZIP"),
     LIVRO("Livro"),
-    SEMINARIO("Seminário");
+    SEMINARIO("Seminário"),
+    INDEFINIDO("Indefinido");
 
     private  final String descricao;
 

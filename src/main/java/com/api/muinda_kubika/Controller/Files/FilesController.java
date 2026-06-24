@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -41,6 +42,14 @@ public class FilesController {
             @RequestParam("documento") UUID documento) throws IOException {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ficheiroService.createFile(file,documento));
+    }
+
+    @PostMapping("/capa")
+    public ResponseEntity<Map<String, String>> uploadCover(
+            @RequestParam("file") MultipartFile file) throws IOException {
+
+        String url = ficheiroService.uploadCoverImage(file);
+        return ResponseEntity.ok(Map.of("url", url));
     }
 
 

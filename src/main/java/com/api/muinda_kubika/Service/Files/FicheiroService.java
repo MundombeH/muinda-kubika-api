@@ -244,6 +244,10 @@ public class FicheiroService {
         }
     }
 
+    public String uploadCoverImage(MultipartFile file) throws IOException {
+        return cloudinaryService.uploadCoverImage(file);
+    }
+
     private String generateChecksum(MultipartFile file) {
         try {
             java.security.MessageDigest digest =

@@ -46,6 +46,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
+    @ExceptionHandler(TelefoneAlreadyExistException.class)
+    public ResponseEntity<String> handleTelefoneExists(
+        TelefoneAlreadyExistException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
     @ExceptionHandler(RoleNotFoundException.class)
     public ResponseEntity<String> handleRoleNotFound(RoleNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(

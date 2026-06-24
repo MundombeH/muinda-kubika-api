@@ -31,10 +31,7 @@ public class RoleChecker {
     
         boolean temNoToken = hasAuthorityInToken(authentication, roleName);
         boolean ativaNoBanco = rolesRepository.existsByDescricaoAndIsActiveTrue(roleName);
-    
-        System.out.println("✅ Tem a role no Token? " + temNoToken);
-        System.out.println("✅ A role está ativa no Banco? " + ativaNoBanco);
-    
+
         return temNoToken && ativaNoBanco;
     }
 

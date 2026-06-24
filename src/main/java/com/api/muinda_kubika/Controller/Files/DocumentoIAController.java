@@ -87,8 +87,7 @@ public class DocumentoIAController {
     }
 
     @PostMapping("/resultado")
-    public ResponseEntity<String> receberResultado(
-        @RequestHeader("X-IA-Worker-Token") String token,
+    public ResponseEntity<String> receberResultado(@RequestHeader("X-IA-Worker-Token") String token,
         @RequestBody @Valid DocumentoIAResultadoRequestDto dto
     ) {
         if (

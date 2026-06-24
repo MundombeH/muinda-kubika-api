@@ -49,8 +49,7 @@ public class AdminInstituicaoController {
         );
     }
 
-    // CRIAR PERFIL (somente usuário base)
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<String> create(
         Authentication auth,

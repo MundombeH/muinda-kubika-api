@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface AdminRepository extends JpaRepository<AdminModel, UUID> {
     List<AdminModel> findByIsActiveTrue();
-    Optional<AdminModel> findByUsuarioAndIsActiveTrue(UUID userId);
+    Optional<AdminModel> findByUsuarioIdAndIsActiveTrue(UUID userId);
 
     Boolean existsByUsuarioId(UUID userId);
 }

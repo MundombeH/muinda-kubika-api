@@ -33,6 +33,8 @@ public class DocumentosResponseDto extends DefaultDto {
     @Enumerated(EnumType.STRING)
     private StatusDocumentoEnum status;
 
+    private String capaUrl;
+
     private DefaultUserResumoDto aprovadoPor;
 
     private Integer versao;

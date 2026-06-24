@@ -58,7 +58,7 @@ public class AdminInstituicaoService {
     public AdminInstituicaoReponseDto getOneAdminInstituicao(UUID userId) {
 
         AdminInstituicaoModel admin = adminInstituicaoRepository
-                .findByUsuarioAndIsActiveTrue(userId)
+                .findByUsuarioIdAndIsActiveTrue(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         return mapToDto(admin);
@@ -69,7 +69,7 @@ public class AdminInstituicaoService {
         DefaultUserModel user = userRepository.findByIdAndIsActiveTrue(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (adminInstituicaoRepository.existsByUsuario(userId)) {
+        if (adminInstituicaoRepository.existsByUsuarioId(userId)) {
             throw new ProfileAlreadyExistsException(
                     "Já existe um perfil de administrador institucional para este utilizador");
         }

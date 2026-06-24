@@ -25,6 +25,8 @@ public class DocumentosRequestDto {
 
     private Integer versao;
 
+    private String capaUrl;
+
     private Set<UUID> categorias = new HashSet<>();
 
     private Set<UUID> tags = new HashSet<>();

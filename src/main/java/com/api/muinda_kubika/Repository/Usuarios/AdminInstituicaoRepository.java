@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface AdminInstituicaoRepository extends JpaRepository<AdminInstituicaoModel, UUID> {
     Optional<AdminInstituicaoModel> findByIdAndIsActiveTrue(UUID uuid);
     List<AdminInstituicaoModel> findByIsActiveTrue();
-    Optional<AdminInstituicaoModel> findByUsuarioAndIsActiveTrue(UUID userId);
+    Optional<AdminInstituicaoModel> findByUsuarioIdAndIsActiveTrue(UUID userId);
 
-    boolean existsByUsuario(UUID userId);
+    boolean existsByUsuarioId(UUID userId);
 }

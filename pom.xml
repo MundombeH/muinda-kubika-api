@@ -91,6 +91,14 @@
       <version>4.4.0</version>
     </dependency>
     
+    
+    <!--Para upload de ficheiros no cloudinary-->
+    <dependency>
+        <groupId>com.cloudinary</groupId>
+        <artifactId>cloudinary-http5</artifactId>
+        <version>2.0.0</version>
+    </dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator-test</artifactId>
@@ -177,6 +185,22 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.flywaydb</groupId>
+				<artifactId>flyway-maven-plugin</artifactId>
+				<version>11.14.1</version>
+				<configuration>
+					<!-- Substitua pelos seus dados reais -->
+					<url>jdbc:postgresql://localhost:5432/muinda_kubika</url>
+					<user>postgres</user>
+					<password>novasenha</password>
+					<locations>
+						<location>filesystem:src/main/resources/db/migration</location>
+					</locations>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

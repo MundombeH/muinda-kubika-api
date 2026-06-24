@@ -2,16 +2,20 @@ package com.api.muinda_kubika.Service.Usuarios;
 
 import com.api.muinda_kubika.DTO.Localizacao.BairroResumoDto;
 import com.api.muinda_kubika.DTO.Usuarios.DefaultUser.DefaultUserResumoDto;
+import com.api.muinda_kubika.DTO.Usuarios.Estudante.EstudanteCriarDto;
 import com.api.muinda_kubika.DTO.Usuarios.Estudante.EstudanteRequestDto;
 import com.api.muinda_kubika.DTO.Usuarios.Estudante.EstudanteResponseDto;
+import com.api.muinda_kubika.Enums.ProfileTypeEnum;
 import com.api.muinda_kubika.Exceptions.ProfileAlreadyExistsException;
 import com.api.muinda_kubika.Exceptions.RoleNotFoundException;
 import com.api.muinda_kubika.Exceptions.UserNotFoundException;
+import com.api.muinda_kubika.Repository.Instituicoes.InstituicoesRepository;
 import com.api.muinda_kubika.Repository.Localizacao.BairrosRepository;
 import com.api.muinda_kubika.Repository.Roles_Permissions.RolesRepository;
 import com.api.muinda_kubika.Repository.Usuarios.AdminRepository;
 import com.api.muinda_kubika.Repository.Usuarios.DefaultUserRepository;
 import com.api.muinda_kubika.Repository.Usuarios.EstudanteRepository;
+import com.api.muinda_kubika.model.Instituicao.InstituicaoModel;
 import com.api.muinda_kubika.model.Localizacao.BairroModel;
 import com.api.muinda_kubika.model.Roles_permissions.RolesModel;
 import com.api.muinda_kubika.model.Usuarios.DefaultUserModel;
@@ -29,21 +33,27 @@ public class EstudanteService {
     private final EstudanteRepository estudanteRepository;
     private final DefaultUserRepository userRepository;
     private final BairrosRepository bairrosRepository;
+    private final InstituicoesRepository instituicoesRepository;
     private final RolesRepository rolesRepository;
     private final AdminRepository adminRepository;
+    private final ProfileApprovalService profileApprovalService;
 
     public EstudanteService(
         EstudanteRepository estudanteRepository,
         DefaultUserRepository userRepository,
         BairrosRepository bairrosRepository,
+        InstituicoesRepository instituicoesRepository,
         RolesRepository rolesRepository,
-        AdminRepository adminRepository
+        AdminRepository adminRepository,
+        ProfileApprovalService profileApprovalService
     ) {
         this.estudanteRepository = estudanteRepository;
         this.userRepository = userRepository;
         this.bairrosRepository = bairrosRepository;
+        this.instituicoesRepository = instituicoesRepository;
         this.rolesRepository = rolesRepository;
         this.adminRepository = adminRepository;
+        this.profileApprovalService = profileApprovalService;
     }
 
     public List<EstudanteResponseDto> getAllEstudantes() {
@@ -54,11 +64,11 @@ public class EstudanteService {
             .collect(Collectors.toList());
     }
 
-    public EstudanteResponseDto getOne(UUID id) {
+    public EstudanteResponseDto getOne(UUID userId) {
         EstudanteModel estudante = estudanteRepository
-            .findByIdAndIsActiveTrue(id)
+            .findByUsuarioIdAndIsActiveTrue(userId)
             .orElseThrow(() ->
-                new EntityNotFoundException("Estudante não encontrado!")
+                new UserNotFoundException(userId)
             );
         return mapToDto(estudante);
     }
@@ -69,7 +79,7 @@ public class EstudanteService {
         UUID userId
     ) {
         EstudanteModel estudante = estudanteRepository
-            .findByUsuarioAndIsActiveTrue(userId)
+            .findByUsuarioIdAndIsActiveTrue(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
         BairroModel bairro = bairrosRepository
             .findByIdAndIsActiveTrue(dto.getBairro())
@@ -88,20 +98,30 @@ public class EstudanteService {
     }
 
     @Transactional
-    public String criarPerfilEstudante(UUID userId) {
+    public String criarPerfilEstudante(UUID userId, EstudanteCriarDto dto) {
         DefaultUserModel usuario = userRepository
             .findByIdAndIsActiveTrue(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (estudanteRepository.existsByUsuario(userId)) {
+        if (estudanteRepository.existsByUsuarioId(userId)) {
             throw new ProfileAlreadyExistsException(userId);
         }
 
+        InstituicaoModel instituicao = instituicoesRepository
+            .findByIdAndIsActiveTrue(dto.getInstituicaoId())
+            .orElseThrow(() -> new RuntimeException("Instituição não encontrada ou inativa"));
+
         EstudanteModel estudante = new EstudanteModel();
         estudante.setUsuario(usuario);
+        estudante.setCurso(dto.getCurso());
+        estudante.setAno(dto.getAno());
+        estudante.setGenero(dto.getGenero());
+        estudante.setIdentificacao(dto.getIdentificacao());
+        estudante.setInstituicao(instituicao);
         estudante.setIsActive(false);
 
-        estudanteRepository.save(estudante);
+        EstudanteModel saved = estudanteRepository.save(estudante);
+        profileApprovalService.createPendingApproval(ProfileTypeEnum.ESTUDANTE, saved.getId(), userId);
 
         return "Perfil estudante criado com sucesso. Aguardando ativação.";
     }
@@ -113,7 +133,7 @@ public class EstudanteService {
             .orElseThrow(() -> new UserNotFoundException(estudanteId));
 
         boolean isAdmin = adminRepository
-            .findByUsuarioAndIsActiveTrue(adminId)
+            .findByUsuarioIdAndIsActiveTrue(adminId)
             .isPresent();
 
         if (!isAdmin) {
@@ -141,7 +161,7 @@ public class EstudanteService {
 
     public void deleteEstudante(UUID userId) {
         EstudanteModel estudante = estudanteRepository
-            .findByUsuarioAndIsActiveTrue(userId)
+            .findByUsuarioIdAndIsActiveTrue(userId)
             .orElseThrow(() -> new UserNotFoundException(userId));
         estudante.setIsActive(false);
         estudanteRepository.save(estudante);

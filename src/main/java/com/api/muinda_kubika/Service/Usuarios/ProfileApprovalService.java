@@ -150,8 +150,8 @@ public class ProfileApprovalService {
     }
 
     private void validateApproverPermission(ProfileTypeEnum profileType, UUID approverId) {
-        boolean isAdmin = adminRepository.findByUsuarioAndIsActiveTrue(approverId).isPresent();
-        boolean isAdminInstituicao = adminInstituicaoRepository.findByUsuarioAndIsActiveTrue(approverId).isPresent();
+        boolean isAdmin = adminRepository.findByUsuarioIdAndIsActiveTrue(approverId).isPresent();
+        boolean isAdminInstituicao = adminInstituicaoRepository.findByUsuarioIdAndIsActiveTrue(approverId).isPresent();
 
         switch (profileType) {
             case ADMIN, ESTUDANTE -> {

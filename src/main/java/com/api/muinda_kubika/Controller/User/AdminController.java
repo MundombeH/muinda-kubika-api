@@ -37,7 +37,7 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getOneAdmin(userId));
     }
 
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("")
     public ResponseEntity<String> post(Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());

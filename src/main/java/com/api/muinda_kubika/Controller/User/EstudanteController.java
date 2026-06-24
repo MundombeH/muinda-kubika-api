@@ -1,5 +1,6 @@
 package com.api.muinda_kubika.Controller.User;
 
+import com.api.muinda_kubika.DTO.Usuarios.Estudante.EstudanteCriarDto;
 import com.api.muinda_kubika.DTO.Usuarios.Estudante.EstudanteRequestDto;
 import com.api.muinda_kubika.DTO.Usuarios.Estudante.EstudanteResponseDto;
 import com.api.muinda_kubika.Service.Usuarios.EstudanteService;
@@ -28,19 +29,22 @@ public class EstudanteController {
         return ResponseEntity.ok(estudanteService.getAllEstudantes());
     }
 
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("@roleChecker.hasAnyActiveRole(authentication, 'ROLE_USUARIO', 'ROLE_ESTUDANTE')")
     @GetMapping("/me")
-    public ResponseEntity<EstudanteResponseDto> getAll(Authentication auth) {
+    public ResponseEntity<EstudanteResponseDto> getMe(Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
         return ResponseEntity.ok(estudanteService.getOne(userId));
     }
 
-    @PreAuthorize("@roleChecker.hasActiveRole(authentication, 'ROLE_USUARIO')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("")
-    public ResponseEntity<String> post(Authentication auth) {
+    public ResponseEntity<String> post(
+        Authentication auth,
+        @Valid @RequestBody EstudanteCriarDto dto
+    ) {
         UUID userId = UUID.fromString(auth.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            estudanteService.criarPerfilEstudante(userId)
+            estudanteService.criarPerfilEstudante(userId, dto)
         );
     }
 
