@@ -12,6 +12,8 @@ import com.api.muinda_kubika.model.Files.DocumentosModel;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("ia")
 public class DocumentoIAController {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentoIAController.class);
 
     private final DocumentoRepository documentoRepository;
     private final AnalizeIaService analizeIaService;
@@ -103,13 +107,25 @@ public class DocumentoIAController {
         UUID documentoId = dto.getDocumentoId();
         DocumentosModel documento = documentoRepository
             .findById(documentoId)
-            .orElseThrow(() ->
-                new RuntimeException("Documento não encontrado")
-            );
+            .orElse(null);
 
-        analizeIaService.salvarAnalise(documento, dto);
-        documento.setStatus(StatusDocumentoEnum.AGUARDANDO_CONFIRMACAO_USUARIO);
-        documentoRepository.save(documento);
+        if (documento == null) {
+            log.warn("Documento nao encontrado para id={}", documentoId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                "Documento não encontrado: " + documentoId
+            );
+        }
+
+        try {
+            analizeIaService.salvarAnalise(documento, dto);
+            documento.setStatus(StatusDocumentoEnum.AGUARDANDO_CONFIRMACAO_USUARIO);
+            documentoRepository.save(documento);
+        } catch (Exception ex) {
+            log.error("Erro ao salvar analise IA para documento {}: {}", documentoId, ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                "Erro ao salvar análise: " + ex.getMessage()
+            );
+        }
 
         return ResponseEntity.ok("Analise recebida");
     }
