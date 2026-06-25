@@ -9,6 +9,7 @@ import com.api.muinda_kubika.DTO.Instituicoes.InstituicoesResumoDto;
 import com.api.muinda_kubika.DTO.Tags.TagsResponseDto;
 import com.api.muinda_kubika.DTO.Usuarios.DefaultUser.DefaultUserResumoDto;
 import com.api.muinda_kubika.Enums.StatusDocumentoEnum;
+import com.api.muinda_kubika.Enums.TipoDocumentoEnum;
 import com.api.muinda_kubika.Exceptions.UserNotFoundException;
 import com.api.muinda_kubika.Repository.Categorias_Tags.CategoriasRepository;
 import com.api.muinda_kubika.Repository.Categorias_Tags.TagsRepository;
@@ -16,6 +17,7 @@ import com.api.muinda_kubika.Repository.Files.DocumentoRepository;
 import com.api.muinda_kubika.Repository.Files.RepositorioRepository;
 import com.api.muinda_kubika.Repository.Instituicoes.InstituicoesRepository;
 import com.api.muinda_kubika.Repository.Usuarios.DefaultUserRepository;
+import com.api.muinda_kubika.Specification.DocumentoSpecification;
 import com.api.muinda_kubika.model.Categorias_Tags.CategoriasModel;
 import com.api.muinda_kubika.model.Categorias_Tags.TagsModel;
 import com.api.muinda_kubika.model.Files.DocumentosModel;
@@ -23,10 +25,13 @@ import com.api.muinda_kubika.model.Files.FicheiroModel;
 import com.api.muinda_kubika.model.Instituicao.InstituicaoModel;
 import com.api.muinda_kubika.model.Usuarios.DefaultUserModel;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,10 +65,57 @@ public class DocumentoService {
     }
 
     public List<DocumentosResponseDto> getAllDocumentos() {
-        return documentoRepository
-            .findByIsActiveTrue()
+        List<DocumentosModel> documentos = documentoRepository
+            .findAll(DocumentoSpecification.activo());
+        Map<UUID, com.api.muinda_kubika.model.Files.RepositorioModel> reposMap = preFetchRepositorios(documentos);
+        return documentos
             .stream()
-            .map(this::mapToDto)
+            .map(doc -> mapToDto(doc, reposMap))
+            .collect(Collectors.toList());
+    }
+
+    public List<DocumentosResponseDto> buscarDocumentos(
+        String titulo,
+        String autor,
+        UUID instituicaoId,
+        List<UUID> categoriaIds,
+        List<UUID> tagIds,
+        StatusDocumentoEnum status,
+        TipoDocumentoEnum tipo,
+        UUID usuarioId
+    ) {
+        Specification<DocumentosModel> spec = Specification.allOf(DocumentoSpecification.activo());
+
+        if (titulo != null && !titulo.isBlank()) {
+            spec = spec.and(DocumentoSpecification.porTitulo(titulo));
+        }
+        if (autor != null && !autor.isBlank()) {
+            spec = spec.and(DocumentoSpecification.porAutor(autor));
+        }
+        if (instituicaoId != null) {
+            spec = spec.and(DocumentoSpecification.porInstituicao(instituicaoId));
+        }
+        if (categoriaIds != null && !categoriaIds.isEmpty()) {
+            spec = spec.and(DocumentoSpecification.porCategorias(categoriaIds));
+        }
+        if (tagIds != null && !tagIds.isEmpty()) {
+            spec = spec.and(DocumentoSpecification.porTags(tagIds));
+        }
+        if (status != null) {
+            spec = spec.and(DocumentoSpecification.porStatus(status));
+        }
+        if (tipo != null) {
+            spec = spec.and(DocumentoSpecification.porTipo(tipo));
+        }
+        if (usuarioId != null) {
+            spec = spec.and(DocumentoSpecification.porUsuario(usuarioId));
+        }
+
+        List<DocumentosModel> allDocs = documentoRepository.findAll(spec);
+        Map<UUID, com.api.muinda_kubika.model.Files.RepositorioModel> reposMap = preFetchRepositorios(allDocs);
+        return allDocs
+            .stream()
+            .map(doc -> mapToDto(doc, reposMap))
             .collect(Collectors.toList());
     }
 
@@ -73,7 +125,15 @@ public class DocumentoService {
             .orElseThrow(() ->
                 new RuntimeException("Documento nao encontrado ou inativo")
             );
-        return mapToDto(documento);
+        return mapToDto(documento, Collections.emptyMap());
+    }
+
+    private Map<UUID, com.api.muinda_kubika.model.Files.RepositorioModel> preFetchRepositorios(List<DocumentosModel> documentos) {
+        List<UUID> ids = documentos.stream().map(DocumentosModel::getId).collect(Collectors.toList());
+        if (ids.isEmpty()) return Collections.emptyMap();
+        return repositorioRepository.findByDocumentoIdIn(ids)
+            .stream()
+            .collect(Collectors.toMap(r -> r.getDocumento().getId(), r -> r, (a, b) -> a));
     }
 
     @Transactional
@@ -108,7 +168,7 @@ public class DocumentoService {
 
         documentoRepository.save(documento);
 
-        return mapToDto(documento);
+        return mapToDto(documento, Collections.emptyMap());
     }
 
     @Transactional
@@ -176,7 +236,7 @@ public class DocumentoService {
             documento.setTags(tags);
         }
 
-        return mapToDto(documentoRepository.save(documento));
+        return mapToDto(documentoRepository.save(documento), Collections.emptyMap());
     }
 
     @Transactional
@@ -193,7 +253,7 @@ public class DocumentoService {
         documento.setAprovadoPor(admin);
         documento.setDataAprovacao(LocalDateTime.now());
 
-        return mapToDto(documentoRepository.save(documento));
+        return mapToDto(documentoRepository.save(documento), Collections.emptyMap());
     }
 
     @Transactional
@@ -204,7 +264,7 @@ public class DocumentoService {
 
         documento.setStatus(StatusDocumentoEnum.REJEITADO);
 
-        return mapToDto(documentoRepository.save(documento));
+        return mapToDto(documentoRepository.save(documento), Collections.emptyMap());
     }
 
     @Transactional
@@ -215,10 +275,10 @@ public class DocumentoService {
 
         documento.setStatus(StatusDocumentoEnum.PUBLICADO);
 
-        return mapToDto(documentoRepository.save(documento));
+        return mapToDto(documentoRepository.save(documento), Collections.emptyMap());
     }
 
-    private DocumentosResponseDto mapToDto(DocumentosModel documentosModel) {
+    private DocumentosResponseDto mapToDto(DocumentosModel documentosModel, Map<UUID, com.api.muinda_kubika.model.Files.RepositorioModel> reposMap) {
         DocumentosResponseDto dto = new DocumentosResponseDto();
         dto.setAutores(documentosModel.getAutores());
         dto.setResumo(documentosModel.getResumo());
@@ -275,12 +335,12 @@ public class DocumentoService {
             dto.setAprovadoPor(mapToUsuario(documentosModel.getAprovadoPor()));
         }
 
-        repositorioRepository
-            .findByDocumentoId(documentosModel.getId())
-            .ifPresent(repositorio -> {
-                dto.setUrlGithub(repositorio.getUrlGithub());
-                dto.setTecnologiasUsadas(repositorio.getTecnologiasUsadas());
-            });
+        com.api.muinda_kubika.model.Files.RepositorioModel repositorio =
+            reposMap.get(documentosModel.getId());
+        if (repositorio != null) {
+            dto.setUrlGithub(repositorio.getUrlGithub());
+            dto.setTecnologiasUsadas(repositorio.getTecnologiasUsadas());
+        }
 
         return dto;
     }

@@ -4,10 +4,13 @@ import com.api.muinda_kubika.DTO.Files.Documentos.DocumentoStatusUpdateDto;
 import com.api.muinda_kubika.DTO.Files.Documentos.DocumentoUpdateRequestDto;
 import com.api.muinda_kubika.DTO.Files.Documentos.DocumentosRequestDto;
 import com.api.muinda_kubika.DTO.Files.Documentos.DocumentosResponseDto;
+import com.api.muinda_kubika.Enums.StatusDocumentoEnum;
+import com.api.muinda_kubika.Enums.TipoDocumentoEnum;
 import com.api.muinda_kubika.Service.Files.DocumentoService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,8 +26,22 @@ public class DocumentoController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<DocumentosResponseDto>> getAll() {
-        return ResponseEntity.ok(documentoService.getAllDocumentos());
+    public ResponseEntity<List<DocumentosResponseDto>> getAll(
+        @RequestParam(required = false) String titulo,
+        @RequestParam(required = false) String autor,
+        @RequestParam(required = false) UUID instituicaoId,
+        @RequestParam(required = false) List<UUID> categoriaId,
+        @RequestParam(required = false) List<UUID> tagId,
+        @RequestParam(required = false) StatusDocumentoEnum status,
+        @RequestParam(required = false) TipoDocumentoEnum tipo,
+        @RequestParam(required = false) UUID usuarioId
+    ) {
+        boolean hasFilter = Stream.of(titulo, autor, instituicaoId, categoriaId, tagId, status, tipo, usuarioId)
+            .anyMatch(v -> v != null && !v.toString().isBlank());
+        if (!hasFilter) {
+            return ResponseEntity.ok(documentoService.getAllDocumentos());
+        }
+        return ResponseEntity.ok(documentoService.buscarDocumentos(titulo, autor, instituicaoId, categoriaId, tagId, status, tipo, usuarioId));
     }
 
     @GetMapping("/{id}")
