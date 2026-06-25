@@ -39,6 +39,7 @@ public class DocumentoService {
     private final CategoriasRepository categoriasRepository;
     private final TagsRepository tagsRepository;
     private final RepositorioRepository repositorioRepository;
+    private final AnalizeIaService analizeIaService;
 
     public DocumentoService(
         DocumentoRepository documentoRepository,
@@ -46,7 +47,8 @@ public class DocumentoService {
         InstituicoesRepository instituicoesRepository,
         CategoriasRepository categoriasRepository,
         TagsRepository tagsRepository,
-        RepositorioRepository repositorioRepository
+        RepositorioRepository repositorioRepository,
+        AnalizeIaService analizeIaService
     ) {
         this.documentoRepository = documentoRepository;
         this.userRepository = userRepository;
@@ -54,6 +56,7 @@ public class DocumentoService {
         this.categoriasRepository = categoriasRepository;
         this.tagsRepository = tagsRepository;
         this.repositorioRepository = repositorioRepository;
+        this.analizeIaService = analizeIaService;
     }
 
     public List<DocumentosResponseDto> getAllDocumentos() {
@@ -139,6 +142,9 @@ public class DocumentoService {
         }
         if (dto.getStatus() != null) {
             documento.setStatus(dto.getStatus());
+            if (dto.getStatus() == StatusDocumentoEnum.PENDENTE_REVISAO_ADMIN) {
+                analizeIaService.confirmarAnalisePendente(documento.getId());
+            }
         }
         if (dto.getCapaUrl() != null) {
             documento.setCapaUrl(dto.getCapaUrl());

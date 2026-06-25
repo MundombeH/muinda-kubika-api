@@ -6,6 +6,7 @@ import com.api.muinda_kubika.DTO.Files.Documentos.DocumentoResumoDto;
 import com.api.muinda_kubika.DTO.Files.Ficheiros.FicheirosResponseDto;
 import com.api.muinda_kubika.DTO.Messages.DocumentoIAMessage;
 import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
+import com.api.muinda_kubika.Enums.TipoDocumentoEnum;
 import com.api.muinda_kubika.Exceptions.DocumentoAnalisePendenteException;
 import com.api.muinda_kubika.Repository.Files.DocumentoRepository;
 import com.api.muinda_kubika.Repository.Files.FichieroRepository;
@@ -144,6 +145,9 @@ public class FicheiroService {
                 "A URL informada deve ser de um repositório público do GitHub"
             );
         }
+
+        documento.setTipoDeDocumento(TipoDocumentoEnum.REPOSITORIO);
+        documentoRepository.save(documento);
 
         RepositorioModel repositorio = repositorioRepository
             .findByDocumentoId(documentoId)

@@ -42,6 +42,17 @@ public class AnalizeIaService {
         );
     }
 
+    public void confirmarAnalisePendente(UUID documentoId) {
+        documentoAnaliseRepository
+            .findByDocumentoIdOrderByCreatedAtDesc(documentoId)
+            .stream()
+            .filter(DocumentoAnaliseModel::getPendenteConfirmacao)
+            .forEach(analise -> {
+                analise.setPendenteConfirmacao(false);
+                documentoAnaliseRepository.save(analise);
+            });
+    }
+
     public DocumentoAnaliseModel salvarAnalise(
         DocumentosModel documento,
         DocumentoIAResultadoRequestDto dto
