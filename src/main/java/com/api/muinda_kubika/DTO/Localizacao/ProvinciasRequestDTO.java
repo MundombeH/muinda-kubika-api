@@ -18,7 +18,6 @@ public class ProvinciasRequestDTO {
     @NotNull
     private String descricao;
 
-    @NotBlank
     @NotNull
     private UUID paisId;
 }

@@ -2,6 +2,7 @@ package com.api.muinda_kubika.DTO.Files.AnalizeIA;
 
 import com.api.muinda_kubika.model.Files.DocumentosModel;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,7 +13,7 @@ import lombok.Setter;
 @Getter
 public class DocumentoAnalizeRequestDto {
 
-    @NotBlank(message = "O Documento é obrigatorio")
+    @NotNull(message = "O Documento é obrigatorio")
     private DocumentosModel documento;
 
     private String resumoGeradoIA;
