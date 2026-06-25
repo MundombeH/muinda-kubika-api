@@ -2,8 +2,12 @@ package com.api.muinda_kubika.Specification;
 
 import com.api.muinda_kubika.Enums.StatusDocumentoEnum;
 import com.api.muinda_kubika.Enums.TipoDocumentoEnum;
+import com.api.muinda_kubika.model.Categorias_Tags.CategoriasModel;
+import com.api.muinda_kubika.model.Categorias_Tags.TagsModel;
 import com.api.muinda_kubika.model.Files.DocumentosModel;
+import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
+import java.util.List;
 import java.util.UUID;
 
 public class DocumentoSpecification {
@@ -25,19 +29,35 @@ public class DocumentoSpecification {
     }
 
     public static Specification<DocumentosModel> porCategoria(UUID categoriaId) {
-        return (root, query, cb) -> cb.isMember(categoriaId, root.get("categorias"));
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<DocumentosModel, CategoriasModel> join = root.join("categorias");
+            return cb.equal(join.get("id"), categoriaId);
+        };
     }
 
-    public static Specification<DocumentosModel> porCategorias(java.util.List<UUID> categoriasIds) {
-        return (root, query, cb) -> root.get("categorias").get("id").in(categoriasIds);
+    public static Specification<DocumentosModel> porCategorias(List<UUID> categoriasIds) {
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<DocumentosModel, CategoriasModel> join = root.join("categorias");
+            return join.get("id").in(categoriasIds);
+        };
     }
 
     public static Specification<DocumentosModel> porTag(UUID tagId) {
-        return (root, query, cb) -> cb.isMember(tagId, root.get("tags"));
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<DocumentosModel, TagsModel> join = root.join("tags");
+            return cb.equal(join.get("id"), tagId);
+        };
     }
 
-    public static Specification<DocumentosModel> porTags(java.util.List<UUID> tagsIds) {
-        return (root, query, cb) -> root.get("tags").get("id").in(tagsIds);
+    public static Specification<DocumentosModel> porTags(List<UUID> tagsIds) {
+        return (root, query, cb) -> {
+            query.distinct(true);
+            Join<DocumentosModel, TagsModel> join = root.join("tags");
+            return join.get("id").in(tagsIds);
+        };
     }
 
     public static Specification<DocumentosModel> porStatus(StatusDocumentoEnum status) {

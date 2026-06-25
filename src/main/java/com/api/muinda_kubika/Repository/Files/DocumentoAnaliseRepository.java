@@ -27,4 +27,9 @@ public interface DocumentoAnaliseRepository
         UUID documentoId,
         OrigemAnaliseIAEnum origemAnalise
     );
+
+    Optional<DocumentoAnaliseModel> findByDocumentoIdAndOrigemAnaliseAndPendenteConfirmacaoTrue(
+        UUID documentoId,
+        OrigemAnaliseIAEnum origemAnalise
+    );
 }

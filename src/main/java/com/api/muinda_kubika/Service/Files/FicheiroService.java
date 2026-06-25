@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -68,6 +69,7 @@ public class FicheiroService {
         return mapToFicheiros(ficheiro);
     }
 
+    @Transactional
     public FicheirosResponseDto createFile(MultipartFile file, UUID documentoId)
         throws IOException {
         DocumentosModel documento = documentoRepository
@@ -130,6 +132,7 @@ public class FicheiroService {
         );
     }
 
+    @Transactional
     public void submeterRepositorioGithub(String gitUrl, Set<String> tecnologiasUsadas, UUID documentoId) {
         DocumentosModel documento = documentoRepository
             .findByIdAndIsActiveTrue(documentoId)

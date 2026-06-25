@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AnalizeIaService {
@@ -32,6 +33,7 @@ public class AnalizeIaService {
         this.repositorioRepository = repositorioRepository;
     }
 
+    @Transactional(readOnly = true)
     public boolean existeAnalisePendente(
         UUID documentoId,
         OrigemAnaliseIAEnum origemAnalise
@@ -42,6 +44,7 @@ public class AnalizeIaService {
         );
     }
 
+    @Transactional
     public void confirmarAnalisePendente(UUID documentoId) {
         documentoAnaliseRepository
             .findByDocumentoIdOrderByCreatedAtDesc(documentoId)
@@ -53,6 +56,7 @@ public class AnalizeIaService {
             });
     }
 
+    @Transactional
     public DocumentoAnaliseModel salvarAnalise(
         DocumentosModel documento,
         DocumentoIAResultadoRequestDto dto
@@ -115,6 +119,15 @@ public class AnalizeIaService {
             conflitos.add("O resumo fornecido difere do resumo gerado pela IA");
         }
 
+        documentoAnaliseRepository
+            .findByDocumentoIdAndOrigemAnaliseAndPendenteConfirmacaoTrue(
+                documento.getId(), origemAnalise
+            )
+            .ifPresent(pendente -> {
+                pendente.setPendenteConfirmacao(false);
+                documentoAnaliseRepository.save(pendente);
+            });
+
         analise.setConflitosDetectados(conflitos);
         analise.setDataProcessamento(LocalDateTime.now());
         analise.setVersao(documento.getVersao());
@@ -124,6 +137,7 @@ public class AnalizeIaService {
         return saved;
     }
 
+    @Transactional(readOnly = true)
     public List<DocumentoIAMetadadosResponseDto> buscarMetadadosPorDocumentoId(
         UUID documentoId
     ) {
@@ -134,6 +148,7 @@ public class AnalizeIaService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Optional<
         DocumentoIAMetadadosResponseDto> buscarUltimoMetadadoPorOrigem( UUID documentoId,
         OrigemAnaliseIAEnum origemAnalise

@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +65,7 @@ public class DocumentoService {
         this.analizeIaService = analizeIaService;
     }
 
+    @Transactional(readOnly = true)
     public List<DocumentosResponseDto> getAllDocumentos() {
         List<DocumentosModel> documentos = documentoRepository
             .findAll(DocumentoSpecification.activo());
@@ -74,6 +76,7 @@ public class DocumentoService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<DocumentosResponseDto> buscarDocumentos(
         String titulo,
         String autor,
@@ -119,6 +122,7 @@ public class DocumentoService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public DocumentosResponseDto getOneDocumento(UUID id) {
         DocumentosModel documento = documentoRepository
             .findByIdAndIsActiveTrue(id)
