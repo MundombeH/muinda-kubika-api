@@ -5,6 +5,7 @@ import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAResultadoRequestDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.SugestaoConfiancaDto;
 import com.api.muinda_kubika.Enums.OrigemAnaliseIAEnum;
 import com.api.muinda_kubika.Repository.Files.DocumentoAnaliseRepository;
+import com.api.muinda_kubika.Repository.Files.DocumentoRepository;
 import com.api.muinda_kubika.Repository.Files.RepositorioRepository;
 import com.api.muinda_kubika.model.Files.DocumentoAnaliseModel;
 import com.api.muinda_kubika.model.Files.DocumentosModel;
@@ -24,13 +25,16 @@ public class AnalizeIaService {
 
     private final DocumentoAnaliseRepository documentoAnaliseRepository;
     private final RepositorioRepository repositorioRepository;
+    private final DocumentoRepository documentoRepository;
 
     public AnalizeIaService(
         DocumentoAnaliseRepository documentoAnaliseRepository,
-        RepositorioRepository repositorioRepository
+        RepositorioRepository repositorioRepository,
+        DocumentoRepository documentoRepository
     ) {
         this.documentoAnaliseRepository = documentoAnaliseRepository;
         this.repositorioRepository = repositorioRepository;
+        this.documentoRepository = documentoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -46,14 +50,41 @@ public class AnalizeIaService {
 
     @Transactional
     public void confirmarAnalisePendente(UUID documentoId) {
-        documentoAnaliseRepository
-            .findByDocumentoIdOrderByCreatedAtDesc(documentoId)
-            .stream()
+        List<DocumentoAnaliseModel> analises = documentoAnaliseRepository
+            .findByDocumentoIdOrderByCreatedAtDesc(documentoId);
+
+        analises.stream()
             .filter(DocumentoAnaliseModel::getPendenteConfirmacao)
             .forEach(analise -> {
                 analise.setPendenteConfirmacao(false);
                 documentoAnaliseRepository.save(analise);
             });
+
+        analises.stream().findFirst().ifPresent(analise -> {
+            DocumentosModel documento = documentoRepository
+                .findById(documentoId).orElse(null);
+            if (documento == null) return;
+
+            Set<String> tecnologias = analise.getTecnologiasSugeridas().stream()
+                .map(SugestaoConfiancaModel::getValor)
+                .filter(v -> v != null && !v.isBlank())
+                .collect(Collectors.toSet());
+            documento.setTecnologiasSugeridas(tecnologias);
+
+            Set<String> frameworks = analise.getFrameworksSugeridos().stream()
+                .map(SugestaoConfiancaModel::getValor)
+                .filter(v -> v != null && !v.isBlank())
+                .collect(Collectors.toSet());
+            documento.setFrameworksSugeridos(frameworks);
+
+            Set<String> palavrasChave = analise.getPalavrasChaveIA().stream()
+                .map(SugestaoConfiancaModel::getValor)
+                .filter(v -> v != null && !v.isBlank())
+                .collect(Collectors.toSet());
+            documento.setPalavrasChaveIA(palavrasChave);
+
+            documentoRepository.save(documento);
+        });
     }
 
     @Transactional

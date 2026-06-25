@@ -47,4 +47,8 @@ public class DocumentosResponseDto extends DefaultDto {
 
     private String urlGithub;
     private Set<String> tecnologiasUsadas;
+
+    private Set<String> tecnologiasSugeridas = new HashSet<>();
+    private Set<String> frameworksSugeridos = new HashSet<>();
+    private Set<String> palavrasChaveIA = new HashSet<>();
 }

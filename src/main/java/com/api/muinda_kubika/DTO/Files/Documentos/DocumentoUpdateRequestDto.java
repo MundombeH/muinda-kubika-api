@@ -18,4 +18,8 @@ public class DocumentoUpdateRequestDto {
     private String capaUrl;
     private Set<String> categorias = new HashSet<>();
     private Set<String> tags = new HashSet<>();
+
+    private Set<String> tecnologiasSugeridas = new HashSet<>();
+    private Set<String> frameworksSugeridos = new HashSet<>();
+    private Set<String> palavrasChaveIA = new HashSet<>();
 }

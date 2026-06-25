@@ -240,6 +240,16 @@ public class DocumentoService {
             documento.setTags(tags);
         }
 
+        if (dto.getTecnologiasSugeridas() != null) {
+            documento.setTecnologiasSugeridas(dto.getTecnologiasSugeridas());
+        }
+        if (dto.getFrameworksSugeridos() != null) {
+            documento.setFrameworksSugeridos(dto.getFrameworksSugeridos());
+        }
+        if (dto.getPalavrasChaveIA() != null) {
+            documento.setPalavrasChaveIA(dto.getPalavrasChaveIA());
+        }
+
         return mapToDto(documentoRepository.save(documento), Collections.emptyMap());
     }
 
@@ -345,6 +355,10 @@ public class DocumentoService {
             dto.setUrlGithub(repositorio.getUrlGithub());
             dto.setTecnologiasUsadas(repositorio.getTecnologiasUsadas());
         }
+
+        dto.setTecnologiasSugeridas(documentosModel.getTecnologiasSugeridas());
+        dto.setFrameworksSugeridos(documentosModel.getFrameworksSugeridos());
+        dto.setPalavrasChaveIA(documentosModel.getPalavrasChaveIA());
 
         return dto;
     }

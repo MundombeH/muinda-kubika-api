@@ -77,4 +77,28 @@ public class DocumentosModel extends DefaultModel {
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<TagsModel> tags = new HashSet<>();
 
+    @ElementCollection
+    @CollectionTable(
+        name = "documento_tecnologias_sugeridas",
+        joinColumns = @JoinColumn(name = "documento_id")
+    )
+    @Column(name = "tecnologia")
+    private Set<String> tecnologiasSugeridas = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(
+        name = "documento_frameworks_sugeridos",
+        joinColumns = @JoinColumn(name = "documento_id")
+    )
+    @Column(name = "framework")
+    private Set<String> frameworksSugeridos = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(
+        name = "documento_palavras_chave_ia",
+        joinColumns = @JoinColumn(name = "documento_id")
+    )
+    @Column(name = "palavra_chave")
+    private Set<String> palavrasChaveIA = new HashSet<>();
+
 }
