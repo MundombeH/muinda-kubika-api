@@ -1,5 +1,6 @@
 package com.api.muinda_kubika.Service.Files;
 
+import com.api.muinda_kubika.DTO.Files.AnalizeIA.ConfirmarAnaliseRequestDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAMetadadosResponseDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAResultadoRequestDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.SugestaoConfiancaDto;
@@ -50,6 +51,11 @@ public class AnalizeIaService {
 
     @Transactional
     public void confirmarAnalisePendente(UUID documentoId) {
+        confirmarAnalisePendente(documentoId, null);
+    }
+
+    @Transactional
+    public void confirmarAnalisePendente(UUID documentoId, ConfirmarAnaliseRequestDto request) {
         List<DocumentoAnaliseModel> analises = documentoAnaliseRepository
             .findByDocumentoIdOrderByCreatedAtDesc(documentoId);
 
@@ -65,23 +71,35 @@ public class AnalizeIaService {
                 .findById(documentoId).orElse(null);
             if (documento == null) return;
 
-            Set<String> tecnologias = analise.getTecnologiasSugeridas().stream()
-                .map(SugestaoConfiancaModel::getValor)
-                .filter(v -> v != null && !v.isBlank())
-                .collect(Collectors.toSet());
-            documento.setTecnologiasSugeridas(tecnologias);
+            if (request == null) {
+                Set<String> tecnologias = analise.getTecnologiasSugeridas().stream()
+                    .map(SugestaoConfiancaModel::getValor)
+                    .filter(v -> v != null && !v.isBlank())
+                    .collect(Collectors.toSet());
+                documento.setTecnologiasSugeridas(tecnologias);
 
-            Set<String> frameworks = analise.getFrameworksSugeridos().stream()
-                .map(SugestaoConfiancaModel::getValor)
-                .filter(v -> v != null && !v.isBlank())
-                .collect(Collectors.toSet());
-            documento.setFrameworksSugeridos(frameworks);
+                Set<String> frameworks = analise.getFrameworksSugeridos().stream()
+                    .map(SugestaoConfiancaModel::getValor)
+                    .filter(v -> v != null && !v.isBlank())
+                    .collect(Collectors.toSet());
+                documento.setFrameworksSugeridos(frameworks);
 
-            Set<String> palavrasChave = analise.getPalavrasChaveIA().stream()
-                .map(SugestaoConfiancaModel::getValor)
-                .filter(v -> v != null && !v.isBlank())
-                .collect(Collectors.toSet());
-            documento.setPalavrasChaveIA(palavrasChave);
+                Set<String> palavrasChave = analise.getPalavrasChaveIA().stream()
+                    .map(SugestaoConfiancaModel::getValor)
+                    .filter(v -> v != null && !v.isBlank())
+                    .collect(Collectors.toSet());
+                documento.setPalavrasChaveIA(palavrasChave);
+            } else {
+                if (request.getTecnologiasSugeridas() != null) {
+                    documento.setTecnologiasSugeridas(request.getTecnologiasSugeridas());
+                }
+                if (request.getFrameworksSugeridos() != null) {
+                    documento.setFrameworksSugeridos(request.getFrameworksSugeridos());
+                }
+                if (request.getPalavrasChaveIA() != null) {
+                    documento.setPalavrasChaveIA(request.getPalavrasChaveIA());
+                }
+            }
 
             documentoRepository.save(documento);
         });

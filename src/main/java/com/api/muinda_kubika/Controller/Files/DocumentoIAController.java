@@ -1,5 +1,6 @@
 package com.api.muinda_kubika.Controller.Files;
 
+import com.api.muinda_kubika.DTO.Files.AnalizeIA.ConfirmarAnaliseRequestDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAGitUrlRequestDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAMetadadosResponseDto;
 import com.api.muinda_kubika.DTO.Files.AnalizeIA.DocumentoIAResultadoRequestDto;
@@ -128,5 +129,24 @@ public class DocumentoIAController {
         }
 
         return ResponseEntity.ok("Analise recebida");
+    }
+
+    @PostMapping("/documentos/{documentoId}/confirmar")
+    public ResponseEntity<String> confirmarAnalise(
+        @PathVariable UUID documentoId,
+        @RequestBody(required = false) ConfirmarAnaliseRequestDto request
+    ) {
+        DocumentosModel documento = documentoRepository
+            .findById(documentoId)
+            .orElse(null);
+
+        if (documento == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                "Documento não encontrado: " + documentoId
+            );
+        }
+
+        analizeIaService.confirmarAnalisePendente(documentoId, request);
+        return ResponseEntity.ok("Analise confirmada");
     }
 }
